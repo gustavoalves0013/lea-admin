@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Centro de Atendimento Especializado Léa Rosenberg</title>
+  <meta name="description" content="ONG dedicada ao atendimento de pessoas com deficiência e em vulnerabilidade social em Carapicuíba/SP desde 1987." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       TOKENS — conceito "peças que se encaixam": cada especialidade
+       do Centro é uma peça de um quebra-cabeça (o mesmo material que
+       a psicopedagogia usa em terapia) — juntas, cuidam da pessoa
+       inteira. Paleta fria-neutra de papel + 5 cores de peça.
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      --papel: #F2F5EF;
+      --papel-alt: #E4EAE0;
+      --branco: #FFFFFF;
+      --tinta: #1C2620;
+      --tinta-suave: #55635A;
+      --tinta-fraca: #8A9389;
+
+      --vermelho: #E14E2C;
+      --vermelho-escuro: #B93A1D;
+      --vermelho-suave: #FBE1D8;
+
+      --girassol: #E3A73B;
+      --girassol-escuro: #B9822A;
+      --girassol-suave: #FBEDD3;
+
+      --mata: #2F6B4F;
+      --mata-clara: #4A8A69;
+      --mata-suave: #DCEBE1;
+
+      --cobalto: #1F6F8B;
+      --cobalto-escuro: #175A70;
+      --cobalto-suave: #D8EAF0;
+
+      --ameixa: #7B3F5E;
+      --ameixa-suave: #F0DFE8;
+
+      --linha: rgba(28,38,32,0.14);
+      --sombra: 0 10px 30px rgba(28,38,32,0.10);
+      --raio: 22px 22px 6px 22px;      /* peça com um canto "encaixável" — a marca visual da página */
+      --raio-sm: 11px 11px 4px 11px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--papel);
+      color: var(--tinta);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 96px 0; }
+
+    :focus-visible { outline: 3px solid var(--vermelho); outline-offset: 3px; }
+
+    h1, h2, h3, h4 { font-family: 'Bitter', serif; font-weight: 600; color: var(--tinta); line-height: 1.15; }
+
+    .num, .val, .pc-item .val, .faixa-item .num { font-family: 'IBM Plex Mono', monospace; }
+
+    /* Etiqueta "peça de encaixe" — usada como abertura de cada seção.
+       Um pequeno nó circular no canto simula o pino de uma peça de
+       quebra-cabeça se conectando à próxima seção. */
+    .aba {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--branco);
+      padding: 8px 20px 8px 16px;
+      border-radius: var(--raio-sm);
+      margin-bottom: 22px;
+    }
+    .aba::after {
+      content: '';
+      position: absolute;
+      right: -6px; top: 50%;
+      width: 12px; height: 12px;
+      background: inherit;
+      border-radius: 50%;
+      transform: translateY(-50%);
+    }
+    .aba.mata { background: var(--mata); }
+    .aba.girassol { background: var(--girassol-escuro); }
+
+    .section-title { font-size: clamp(1.7rem, 3.2vw, 2.5rem); margin-bottom: 14px; letter-spacing: -0.01em; }
+    .section-sub { font-size: 16px; color: var(--tinta-suave); max-width: 620px; }
+
+    .btn-primary, .btn-ghost, .btn-submit, .btn-sm-primary {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--vermelho);
+      color: var(--branco);
+      padding: 14px 26px;
+      border-radius: var(--raio-sm);
+      text-decoration: none;
+    }
+    .btn-primary:hover { transform: translateY(-2px); background: var(--vermelho-escuro); box-shadow: var(--sombra); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent;
+      color: var(--tinta);
+      padding: 14px 22px;
+      border: 1.5px solid var(--linha);
+      border-radius: var(--raio-sm);
+      text-decoration: none;
+    }
+    .btn-ghost:hover { border-color: var(--tinta); }
+
+    /* ── NAV ────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(242,245,239,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--linha);
+    }
+    .nav-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 72px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; height: 100%; }
+    .nav-logo-img { height: 42px; width: auto; border-radius: 4px 10px 4px 4px; }
+    .nav-logo-text strong { display: block; font-family: 'Bitter', serif; font-size: 16px; font-weight: 600; color: var(--tinta); }
+    .nav-logo-text span { font-size: 11.5px; color: var(--tinta-suave); letter-spacing: 0.02em; }
+    .nav-links { list-style: none; display: flex; align-items: center; gap: 30px; }
+    .nav-links a {
+      text-decoration: none; color: var(--tinta-suave);
+      font-size: 14.5px; font-weight: 600;
+      padding: 8px 2px; border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-links a:hover { color: var(--tinta); border-color: var(--vermelho); }
+    .nav-links a.nav-cta {
+      background: var(--vermelho); color: var(--branco);
+      padding: 10px 18px; border-radius: var(--raio-sm); border-bottom: none;
+    }
+    .nav-links a.nav-cta:hover { background: var(--vermelho-escuro); }
+    .nav-burger {
+      display: none; flex-direction: column; justify-content: center; gap: 5px;
+      width: 40px; height: 40px; background: none; border: none; cursor: pointer;
+    }
+    .nav-burger span { display: block; width: 22px; height: 2px; background: var(--tinta); }
+
+    /* ── HERO ───────────────────────────────────────────────── */
+    .hero { padding: 64px 0 0; }
+    .hero-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 2rem 84px;
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 64px; align-items: center;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 700; color: var(--mata);
+      background: var(--mata-suave); padding: 7px 14px;
+      border-radius: var(--raio-sm); margin-bottom: 22px;
+    }
+    .hero-inner h1 { font-size: clamp(2.3rem, 4.6vw, 3.6rem); letter-spacing: -0.015em; margin-bottom: 20px; }
+    .hero-inner h1 em { font-style: italic; color: var(--vermelho); }
+    .hero-inner > div:first-child > p { font-size: 17.5px; color: var(--tinta-suave); max-width: 480px; margin-bottom: 32px; }
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    /* "Peças que se encaixam" — o elemento assinatura da página: um
+       agrupamento de blocos coloridos, um por especialidade, unidos
+       ao redor de um núcleo — a pessoa atendida. Cada peça isolada
+       cuida de uma parte; juntas, cuidam do todo. */
+    .blocos { position: relative; min-height: 460px; }
+    .bloco {
+      position: absolute;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      font-family: 'Bitter', serif; font-weight: 600; font-size: 14.5px;
+      line-height: 1.25;
+      color: var(--branco);
+      padding: 14px;
+      border-radius: var(--raio);
+      box-shadow: var(--sombra);
+      transition: transform 0.25s ease;
+    }
+    .bloco:hover { transform: scale(1.045) rotate(0deg) !important; z-index: 20; }
+    .bloco-1 { top: 0;    left: 8%;   width: 46%; height: 130px; background: var(--vermelho);  transform: rotate(-3deg); z-index: 3; }
+    .bloco-2 { top: 6%;   right: 0;   width: 40%; height: 150px; background: var(--cobalto);    transform: rotate(4deg);  z-index: 2; }
+    .bloco-3 { bottom: 4%; left: 0;   width: 38%; height: 140px; background: var(--girassol-escuro); transform: rotate(3deg); z-index: 2; }
+    .bloco-4 { bottom: 0; right: 6%;  width: 42%; height: 120px; background: var(--mata);       transform: rotate(-4deg); z-index: 1; }
+    .bloco-5 { top: 38%;  left: 30%;  width: 40%; height: 110px; background: var(--ameixa);      transform: rotate(-2deg); z-index: 4; }
+    .bloco-central {
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 96px; height: 96px; border-radius: 50%;
+      background: var(--branco); box-shadow: 0 14px 34px rgba(28,38,32,0.18);
+      z-index: 10;
+    }
+    .bloco-central svg { width: 40px; height: 40px; fill: var(--vermelho); }
+
+    /* ── FAIXA DE REGISTRO (estatísticas em formato de bloco) ── */
+    .faixa {
+      background: var(--tinta); color: var(--papel);
+      padding: 30px 0;
+    }
+    .faixa-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 2rem;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+    }
+    .faixa-item { padding: 0 24px; border-left: 1px solid rgba(242,245,239,0.18); }
+    .faixa-item:first-child { border-left: none; padding-left: 0; }
+    .faixa-item .num { font-size: 2rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--girassol); }
+    .faixa-item .lbl { font-size: 12.5px; color: rgba(242,245,239,0.75); margin-top: 4px; }
+
+    /* ── SOBRE ──────────────────────────────────────────────── */
+    .sobre-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 64px; align-items: start; }
+    .sobre-text blockquote {
+      font-family: 'Bitter', serif; font-style: italic; font-size: 1.25rem;
+      color: var(--mata); border-left: 3px solid var(--vermelho);
+      padding: 4px 0 4px 22px; margin: 22px 0; line-height: 1.5;
+    }
+    .sobre-text p { color: var(--tinta-suave); margin-bottom: 16px; font-size: 15.5px; }
+    .sobre-text p strong { color: var(--tinta); }
+
+    /* ── SERVIÇOS ── cada card recebe a cor de uma "peça" diferente ── */
+    .servicos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 44px; }
+    .servico-card {
+      background: var(--branco); border: 1.5px solid var(--linha);
+      border-top: 4px solid var(--vermelho);
+      border-radius: var(--raio); padding: 26px 24px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .servico-card:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
+    .servico-card:nth-child(6n+2) { border-top-color: var(--cobalto); }
+    .servico-card:nth-child(6n+3) { border-top-color: var(--girassol-escuro); }
+    .servico-card:nth-child(6n+4) { border-top-color: var(--mata); }
+    .servico-card:nth-child(6n+5) { border-top-color: var(--ameixa); }
+    .servico-card:nth-child(6n+6) { border-top-color: var(--vermelho-escuro); }
+    .servico-icon {
+      width: 42px; height: 42px; border-radius: var(--raio-sm);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+      background: var(--vermelho-suave);
+    }
+    .servico-icon svg { width: 20px; height: 20px; fill: var(--vermelho); }
+    .servico-card:nth-child(6n+2) .servico-icon { background: var(--cobalto-suave); }
+    .servico-card:nth-child(6n+2) .servico-icon svg { fill: var(--cobalto); }
+    .servico-card:nth-child(6n+3) .servico-icon { background: var(--girassol-suave); }
+    .servico-card:nth-child(6n+3) .servico-icon svg { fill: var(--girassol-escuro); }
+    .servico-card:nth-child(6n+4) .servico-icon { background: var(--mata-suave); }
+    .servico-card:nth-child(6n+4) .servico-icon svg { fill: var(--mata); }
+    .servico-card:nth-child(6n+5) .servico-icon { background: var(--ameixa-suave); }
+    .servico-card:nth-child(6n+5) .servico-icon svg { fill: var(--ameixa); }
+    .servico-card:nth-child(6n+6) .servico-icon { background: var(--vermelho-suave); }
+    .servico-card:nth-child(6n+6) .servico-icon svg { fill: var(--vermelho-escuro); }
+    .servico-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+    .servico-card p { font-size: 14px; color: var(--tinta-suave); }
+    .servico-list { list-style: none; font-size: 14px; color: var(--tinta-suave); }
+    .servico-list li { padding: 5px 0 5px 18px; position: relative; }
+    .servico-list li::before { content: '—'; position: absolute; left: 0; color: var(--vermelho); }
+
+    /* ── PRESTAÇÃO DE CONTAS ────────────────────────────────── */
+    .pc-intro { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; margin: 32px 0 36px; }
+    .pc-highlight {
+      display: flex; gap: 16px; align-items: flex-start;
+      background: var(--girassol-suave); border-radius: var(--raio);
+      padding: 22px 22px;
+    }
+    .pc-highlight .icon { width: 36px; height: 36px; background: var(--girassol); border-radius: var(--raio-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pc-highlight .icon svg { width: 18px; height: 18px; fill: var(--branco); }
+    .pc-highlight h4 { font-size: 14.5px; margin-bottom: 4px; }
+    .pc-highlight p { font-size: 13.5px; color: var(--tinta-suave); }
+
+    .filtro-ano-select {
+      padding: 9px 16px; border: 1.5px solid var(--linha); border-radius: var(--raio-sm);
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: var(--tinta);
+      background: var(--branco); outline: none;
+    }
+
+    .pc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .pc-card {
+      background: var(--branco); border: 1.5px solid var(--linha);
+      border-radius: var(--raio); padding: 22px 22px 20px;
+      border-style: solid;
+    }
+    .pc-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--linha); }
+    .pc-card-month { font-family: 'Bitter', serif; font-size: 1.1rem; font-weight: 600; }
+    .pc-card-year { font-size: 12.5px; color: var(--tinta-fraca); }
+    .pc-card-status { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 9px; border-radius: 3px 8px 3px 3px; }
+    .status-ok { background: var(--mata-suave); color: var(--mata); }
+    .pc-item { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+    .pc-item .key { color: var(--tinta-suave); }
+    .pc-item .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .pc-card-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .btn-sm { font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 700; padding: 9px 14px; border-radius: var(--raio-sm); text-decoration: none; cursor: pointer; border: none; }
+    .btn-sm-primary { background: var(--tinta); color: var(--papel); }
+    .btn-sm-ghost { background: transparent; border: 1.5px solid var(--linha); color: var(--tinta); }
+    .pc-empty { text-align: center; font-size: 14px; color: var(--tinta-fraca); padding: 20px 0; }
+
+    /* ── COMO AJUDAR ────────────────────────────────────────── */
+    .ajudar-inner { background: var(--tinta); color: var(--papel); border-radius: var(--raio); padding: 64px 56px; }
+    #ajudar .aba { background: var(--vermelho); color: var(--branco); }
+    #ajudar .section-title, #ajudar .section-sub { color: var(--papel); }
+    #ajudar .section-sub { color: rgba(242,245,239,0.75); }
+    .ajudar-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+    .ajudar-card {
+      background: rgba(242,245,239,0.06); border: 1.5px solid rgba(242,245,239,0.16);
+      border-radius: var(--raio); padding: 26px 22px;
+    }
+    .ajudar-card .icon { width: 40px; height: 40px; background: rgba(227,167,59,0.18); border-radius: var(--raio-sm); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+    .ajudar-card .icon svg { width: 20px; height: 20px; fill: var(--girassol); }
+    .ajudar-card h3 { color: var(--papel); font-size: 1.05rem; margin-bottom: 8px; }
+    .ajudar-card p { font-size: 13.5px; color: rgba(242,245,239,0.72); margin-bottom: 16px; }
+    .ajudar-card a.btn-card { font-size: 13.5px; font-weight: 700; color: var(--girassol); text-decoration: none; }
+    .ajudar-card a.btn-card:hover { text-decoration: underline; }
+
+    /* ── CONTATO ────────────────────────────────────────────── */
+    .contato-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 56px; align-items: start; }
+    .contato-info h3 { font-size: 1.3rem; margin-bottom: 22px; }
+    .contato-item { display: flex; gap: 14px; margin-bottom: 20px; align-items: flex-start; }
+    .contato-item .ico { width: 38px; height: 38px; background: var(--papel-alt); border-radius: var(--raio-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .contato-item .ico svg { width: 18px; height: 18px; fill: var(--cobalto); }
+    .contato-item .txt strong { display: block; font-size: 12.5px; font-weight: 700; color: var(--tinta); }
+    .contato-item .txt span { font-size: 14px; color: var(--tinta-suave); }
+    .redes { display: flex; gap: 10px; margin-top: 28px; }
+    .rede-link { width: 38px; height: 38px; border-radius: var(--raio-sm); background: var(--papel-alt); border: 1px solid var(--linha); display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s; }
+    .rede-link:hover { background: var(--vermelho); }
+    .rede-link:hover svg { fill: var(--branco); }
+    .rede-link svg { width: 17px; height: 17px; fill: var(--cobalto); transition: fill 0.2s; }
+
+    .contato-form { background: var(--branco); border-radius: var(--raio); padding: 34px 30px; border: 1.5px solid var(--linha); box-shadow: var(--sombra); }
+    .contato-form h3 { font-size: 1.2rem; margin-bottom: 22px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12.5px; font-weight: 700; color: var(--tinta); }
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 12px 14px; border: 1.5px solid var(--linha); border-radius: var(--raio-sm);
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: var(--tinta);
+      background: var(--papel); outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--cobalto); }
+    .form-group textarea { resize: vertical; min-height: 110px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .btn-submit { width: 100%; background: var(--vermelho); color: var(--branco); padding: 14px; border-radius: var(--raio-sm); margin-top: 8px; }
+    .btn-submit:hover { background: var(--vermelho-escuro); }
+
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    footer { background: var(--tinta); color: rgba(242,245,239,0.62); padding: 52px 0 30px; }
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; padding-bottom: 36px; border-bottom: 1px solid rgba(242,245,239,0.12); margin-bottom: 28px; }
+    .footer-brand strong { display: block; font-family: 'Bitter', serif; font-size: 1.1rem; color: var(--papel); margin-bottom: 10px; }
+    .footer-brand p { font-size: 14px; line-height: 1.7; max-width: 300px; }
+    .footer-col h4 { font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--papel); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col a { font-size: 14px; color: rgba(242,245,239,0.58); text-decoration: none; transition: color 0.2s; }
+    .footer-col a:hover { color: var(--girassol); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .footer-bottom p { font-size: 13px; }
+    .footer-cnpj { font-size: 12px; }
+
+    /* ── MODAL DETALHE ──────────────────────────────────────── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(28,38,32,0.55); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.aberto { display: flex; }
+    .modal-box { background: var(--branco); border-radius: var(--raio); padding: 32px 30px; max-width: 500px; width: 100%; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .modal-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--cobalto); margin-bottom: 4px; }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 24px; color: var(--tinta-fraca); padding: 4px; line-height: 1; }
+    .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .modal-stat { border-radius: var(--raio-sm); padding: 15px 16px; }
+    .modal-stat .lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .modal-stat .val { font-family: 'IBM Plex Mono', monospace; font-size: 1.25rem; }
+    .modal-resumo { background: var(--papel); border-radius: var(--raio-sm); padding: 15px 17px; margin-bottom: 18px; }
+    .modal-resumo .lbl { font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+    .modal-resumo p { font-size: 13.5px; color: var(--tinta-suave); line-height: 1.6; }
+
+    /* ── MOBILE ─────────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      section { padding: 64px 0; }
+      .nav-links { display: none; flex-direction: column; align-items: flex-start; position: absolute; top: 72px; left: 0; right: 0; background: var(--papel); padding: 18px 2rem; border-bottom: 1px solid var(--linha); gap: 6px; }
+      .nav-links.open { display: flex; }
+      .nav-burger { display: flex; }
+      .hero-inner { grid-template-columns: 1fr; }
+      .blocos { min-height: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+      .bloco { position: static !important; width: auto !important; height: auto !important; transform: none !important; padding: 10px 16px; }
+      .bloco-central { display: none; }
+      .faixa-inner { grid-template-columns: 1fr 1fr; row-gap: 20px; }
+      .faixa-item:nth-child(3) { border-left: none; padding-left: 0; }
+      .sobre-grid { grid-template-columns: 1fr; }
+      .servicos-grid { grid-template-columns: 1fr; }
+      .pc-intro { grid-template-columns: 1fr; }
+      .pc-grid { grid-template-columns: 1fr; }
+      .ajudar-inner { padding: 44px 24px; }
+      .ajudar-cards { grid-template-columns: 1fr; }
+      .contato-grid { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .form-row { grid-template-columns: 1fr; }
+      .modal-stats { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── ANIMAÇÕES ──────────────────────────────────────────── */
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+      * { scroll-behavior: auto !important; }
+    }
+
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#inicio" class="nav-logo">
+      <img src="https://i.ibb.co/hJQSGpqc/image.png" alt="Logótipo Léa Rosenberg" class="nav-logo-img" />
+      <div class="nav-logo-text">
+        <strong>Léa Rosenberg</strong>
+        <span>Centro de Atendimento</span>
+      </div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#sobre">Sobre Nós</a></li>
+      <li><a href="#servicos">Serviços</a></li>
+      <li><a href="#prestacao">Prestação de Contas</a></li>
+      <li><a href="#contato">Contato</a></li>
+      <li><a href="#ajudar" class="nav-cta">Doe Agora</a></li>
+    </ul>
+    <button class="nav-burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<section class="hero" id="inicio">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">Desde 1987 em Carapicuíba/SP</div>
+      <h1>Onde há <em>coração</em>,<br>há esperança</h1>
+      <p>O Centro de Atendimento Especializado Léa Rosenberg atende pessoas com deficiência e em vulnerabilidade social, transformando vidas com cuidado, inclusão e dignidade.</p>
+      <div class="hero-actions">
+        <a href="#ajudar" class="btn-primary">Faça uma doação</a>
+        <a href="#sobre" class="btn-ghost">Conheça nossa história</a>
+      </div>
+    </div>
+    <div class="blocos" aria-hidden="true">
+      <div class="bloco bloco-1">Psicologia</div>
+      <div class="bloco bloco-2">Psicopedagogia</div>
+      <div class="bloco bloco-3">Serviço Social</div>
+      <div class="bloco bloco-4">Comunidade</div>
+      <div class="bloco bloco-5">Grupos</div>
+      <div class="bloco bloco-central">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.3-8.2C.7 9.8 1.9 6 5.4 5c2.1-.6 4 .3 5.1 2 .5.7 1 1.6 1.5 2.4.5-.8 1-1.7 1.5-2.4 1.1-1.7 3-2.6 5.1-2 3.5 1 4.7 4.8 2.7 7.8C18.7 16.65 12 21 12 21z"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="faixa">
+    <div class="faixa-inner">
+      <div class="faixa-item"><div class="num">37+</div><div class="lbl">Anos de história</div></div>
+      <div class="faixa-item"><div class="num">6</div><div class="lbl">Áreas de atendimento</div></div>
+      <div class="faixa-item"><div class="num">100%</div><div class="lbl">Transparência</div></div>
+      <div class="faixa-item"><div class="num">1987</div><div class="lbl">Ano de fundação</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="sobre">
+  <div class="container">
+    <div class="sobre-grid fade-in">
+      <div>
+        <div class="aba mata">Nossa história</div>
+        <h2 class="section-title">Trabalhando por um futuro mais inclusivo</h2>
+      </div>
+      <div class="sobre-text">
+        <p>O Centro de Atendimento Especializado Léa Rosenberg iniciou suas atividades em <strong>29 de agosto de 1987</strong>, criado pelo grupo de Senhoras Estrela Azul, com a finalidade de atender pessoas com deficiência intelectual.</p>
+        <blockquote>"Sendo a mudança que precisamos ver — nossa missão é transformar vidas com cuidado e inclusão."</blockquote>
+        <p>Nossa fundação surgiu da necessidade de pais que não tinham onde deixar seus filhos com deficiência, e pela mobilização da população frente à realidade dessas famílias.</p>
+        <p>Hoje atendemos pessoas com deficiência e em vulnerabilidade social, oferecendo serviços de psicologia, serviço social, psicopedagogia, oficinas e muito mais — sempre com qualidade e acessibilidade.</p>
+        <a href="#servicos" class="btn-primary" style="margin-top:8px;">Ver nossos serviços</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="servicos">
+  <div class="container">
+    <div class="fade-in">
+      <div class="aba girassol">O que fazemos</div>
+      <h2 class="section-title">Serviços e atendimentos</h2>
+      <p class="section-sub">Oferecemos atendimento multidisciplinar para pessoas com deficiência, famílias e a comunidade em geral.</p>
+    </div>
+    <div class="servicos-grid fade-in">
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></div>
+        <h3>Atendimento Psicológico</h3>
+        <p>Psicoterapia individual para todas as idades, inclusive para pessoas com deficiência. Valores acessíveis para associados e não associados.</p>
+      </div>
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg></div>
+        <h3>Psicopedagogia</h3>
+        <p>Avaliação e intervenção em dificuldades de aprendizagem como dislexia, disgrafia, disortografia e discalculia em crianças, adolescentes e adultos.</p>
+      </div>
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div>
+        <h3>Serviço Social</h3>
+        <p>Democratizamos o acesso ao serviço social, orientando famílias, realizando encaminhamentos e apoiando pessoas em situação de vulnerabilidade.</p>
+      </div>
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+        <h3>Grupos Terapêuticos</h3>
+        <ul class="servico-list">
+          <li>Grupo para adolescentes</li>
+          <li>Grupo da terceira idade</li>
+          <li>Grupo de mãe e cuidadores</li>
+        </ul>
+      </div>
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
+        <h3>Pessoa com Deficiência</h3>
+        <ul class="servico-list">
+          <li>Inclusão digital</li>
+          <li>Culinária e artesanato</li>
+          <li>Atividades de vida diária</li>
+          <li>Educação física adaptada</li>
+          <li>Vida prática (transporte, compras)</li>
+        </ul>
+      </div>
+
+      <div class="servico-card">
+        <div class="servico-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+        <h3>Desenvolvimento Comunitário</h3>
+        <p>Ações voltadas para a comunidade de Carapicuíba, promovendo cidadania, direitos e melhores condições de vida para todos.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="prestacao">
+  <div class="container">
+    <div class="fade-in">
+      <div class="aba mata">Transparência</div>
+      <h2 class="section-title">Prestação de contas</h2>
+    </div>
+    <div class="pc-intro fade-in">
+      <p class="section-sub" style="margin-bottom:0">Acreditamos que a transparência é a base da confiança. Aqui publicamos mensalmente todos os relatórios financeiros e de atividades do Centro.</p>
+      <div class="pc-highlight">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+        <div>
+          <h4>Compromisso com a transparência</h4>
+          <p>Todos os relatórios são publicados até o dia 10 do mês seguinte, em conformidade com as exigências para ONGs.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:700;color:var(--tinta);">Filtrar por ano:</label>
+      <select id="filtro-ano" class="filtro-ano-select" onchange="renderPrestacoes()">
+        <option value="">Todos</option>
+      </select>
+    </div>
+
+    <div class="pc-grid fade-in" id="pc-grid-publico">
+      <div class="pc-card" style="grid-column:1/-1;">
+        <div class="pc-empty">
+          <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+          Os relatórios mensais aparecerão aqui quando publicados pela equipe.
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:24px;font-size:13px;color:var(--tinta-fraca);text-align:center;">
+      ℹ️ Relatórios publicados mensalmente pela equipe. Em caso de dúvidas, <a href="#contato" style="color:var(--mata);font-weight:600;">entre em contato</a>.
+    </p>
+  </div>
+</section>
+
+<section id="ajudar">
+  <div class="container">
+    <div class="ajudar-inner">
+      <div class="fade-in">
+        <div class="aba girassol">Faça parte</div>
+        <h2 class="section-title">Como você pode ajudar</h2>
+        <p class="section-sub">Cada contribuição faz diferença real na vida de pessoas com deficiência e em vulnerabilidade social em Carapicuíba.</p>
+      </div>
+      <div class="ajudar-cards fade-in">
+
+        <div class="ajudar-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div>
+          <h3>Faça uma doação</h3>
+          <p>Sua doação financia atendimentos, oficinas e materiais para pessoas com deficiência e em vulnerabilidade social. Qualquer valor ajuda.</p>
+          <a href="#contato" class="btn-card">Entre em contato →</a>
+        </div>
+
+        <div class="ajudar-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+          <h3>Seja voluntário</h3>
+          <p>Contribua com seu tempo e habilidades. Buscamos profissionais da saúde, educação, tecnologia e pessoas dispostas a fazer a diferença.</p>
+          <a href="#contato" class="btn-card">Quero ser voluntário →</a>
+        </div>
+
+        <div class="ajudar-card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M22 9V7h-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2v-2h-2V9h2zm-4 10H4V5h14v14z"/></svg></div>
+          <h3>Faça uma parceria</h3>
+          <p>Empresas e instituições podem firmar parcerias conosco, contribuindo com recursos, serviços ou visibilidade para nossa missão.</p>
+          <a href="#contato" class="btn-card">Fale conosco →</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contato">
+  <div class="container">
+    <div class="fade-in">
+      <div class="aba mata">Fale conosco</div>
+      <h2 class="section-title">Entre em contato</h2>
+    </div>
+    <div class="contato-grid fade-in">
+      <div class="contato-info">
+        <h3>Estamos aqui para ajudar</h3>
+
+        <div class="contato-item">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+          <div class="txt"><strong>Endereço</strong><span>R. Araguari, 23 — Conj. Hab. Pres. Castelo Branco<br>Carapicuíba — SP, 06327-130</span></div>
+        </div>
+
+        <div class="contato-item">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
+          <div class="txt"><strong>Telefone</strong><span>(11) 98250-7347 / (11) 4187-3835</span></div>
+        </div>
+
+        <div class="contato-item">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+          <div class="txt"><strong>E-mail</strong><span>centroatendimentolea@gmail.com</span></div>
+        </div>
+
+        <div class="redes">
+          <a href="https://www.facebook.com/lea.rosenberg.180" target="_blank" class="rede-link" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <a href="https://instagram.com/inst.learosenberg" target="_blank" class="rede-link" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path fill="none" stroke-width="2" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+          <a href="https://maps.google.com/?cid=10992496628948455124" target="_blank" class="rede-link" aria-label="Google Maps"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></a>
+        </div>
+      </div>
+
+      <div class="contato-form">
+        <h3>Envie uma mensagem</h3>
+        <div class="form-row">
+          <div class="form-group"><label for="nome">Nome</label><input type="text" id="nome" placeholder="Seu nome completo" /></div>
+          <div class="form-group"><label for="email">E-mail</label><input type="email" id="email" placeholder="seu@email.com" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="tel">Telefone</label><input type="tel" id="tel" placeholder="(11) 99999-9999" /></div>
+          <div class="form-group">
+            <label for="assunto">Assunto</label>
+            <select id="assunto">
+              <option value="">Selecione...</option>
+              <option>Atendimento psicológico</option>
+              <option>Serviço social</option>
+              <option>Psicopedagogia</option>
+              <option>Doação</option>
+              <option>Parceria</option>
+              <option>Voluntariado</option>
+              <option>Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full"><label for="msg">Mensagem</label><textarea id="msg" placeholder="Como podemos ajudar?"></textarea></div>
+        </div>
+        <button class="btn-submit" onclick="enviarFormulario()">Enviar mensagem</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <strong>Centro de Atendimento Especializado Léa Rosenberg</strong>
+        <p>Transformando vidas com cuidado, inclusão e dignidade desde 1987. Uma ONG comprometida com pessoas com deficiência e em vulnerabilidade social em Carapicuíba/SP.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navegação</h4>
+        <ul>
+          <li><a href="#sobre">Sobre Nós</a></li>
+          <li><a href="#servicos">Serviços</a></li>
+          <li><a href="#prestacao">Prestação de Contas</a></li>
+          <li><a href="#ajudar">Como Ajudar</a></li>
+          <li><a href="#contato">Contato</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="tel:11982507347">(11) 98250-7347</a></li>
+          <li><a href="tel:1141873835">(11) 4187-3835</a></li>
+          <li><a href="mailto:centroatendimentolea@gmail.com">centroatendimentolea@gmail.com</a></li>
+          <li><a href="#">R. Araguari, 23 — Carapicuíba/SP</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Centro de Atendimento Especializado Léa Rosenberg. Todos os direitos reservados.</p>
+      <p class="footer-cnpj">ONG sem fins lucrativos — Carapicuíba/SP  ·  <a href="https://gustavoalves0013.github.io/lea-admin/#/auth" style="color:rgba(242,245,239,0.3);text-decoration:none;font-size:11px;" title="Área administrativa">Admin</a></p>
+    </div>
+  </div>
+</footer>
+
+<div id="modalDetalhe" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <div class="modal-eyebrow">Relatório mensal</div>
+        <h3 id="det-titulo" style="font-size:1.4rem;"></h3>
+      </div>
+      <button onclick="fecharDetalhe()" class="modal-close" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="modal-stats">
+      <div class="modal-stat" style="background:var(--mata-suave);">
+        <div class="lbl" style="color:var(--mata);">Receitas</div>
+        <div id="det-receitas" class="val"></div>
+      </div>
+      <div class="modal-stat" style="background:var(--vermelho-suave);">
+        <div class="lbl" style="color:var(--vermelho);">Despesas</div>
+        <div id="det-despesas" class="val"></div>
+      </div>
+      <div class="modal-stat" style="background:var(--girassol-suave);">
+        <div class="lbl" style="color:var(--girassol-escuro);">Saldo</div>
+        <div id="det-saldo" class="val"></div>
+      </div>
+      <div class="modal-stat" style="background:var(--papel-alt);">
+        <div class="lbl" style="color:var(--tinta-suave);">Atendimentos</div>
+        <div id="det-atend" class="val"></div>
+      </div>
+    </div>
+
+    <div class="modal-resumo">
+      <div class="lbl">Resumo das atividades</div>
+      <p id="det-descricao"></p>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <a id="det-baixar" href="#" style="display:none;align-items:center;gap:8px;background:var(--tinta);color:var(--papel);font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:700;padding:11px 22px;border-radius:var(--raio-sm);text-decoration:none;">
+        📄 Baixar relatório
+      </a>
+      <span id="det-data" style="font-size:12px;color:var(--tinta-fraca);margin-left:auto;"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── MENU MOBILE ───────────────────────────────────────────────
+  document.getElementById('burger').addEventListener('click', function() {
+    document.getElementById('navLinks').classList.toggle('open');
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('click', () => document.getElementById('navLinks').classList.remove('open'));
+  });
+
+  // ── ANIMAÇÕES SCROLL ──────────────────────────────────────────
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!prefersReducedMotion) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  } else {
+    document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
+  }
+
+  // ── FORMULÁRIO DE CONTATO ─────────────────────────────────────
+  function enviarFormulario() {
+    const nome  = document.getElementById('nome').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const msg   = document.getElementById('msg').value.trim();
+    if (!nome || !email || !msg) {
+      mostrarAlerta('Por favor, preencha nome, e-mail e mensagem.', 'erro');
+      return;
+    }
+    const dest   = 'centroatendimentolea@gmail.com';
+    const assunto = document.getElementById('assunto').value || 'Contato pelo site';
+    const corpo  = `Nome: ${nome}\nE-mail: ${email}\nTelefone: ${document.getElementById('tel').value}\n\n${msg}`;
+    window.location.href = `mailto:${dest}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+    mostrarAlerta('Abrindo seu aplicativo de e-mail...', 'ok');
+  }
+
+  // ── ALERTA INLINE ─────────────────────────────────────────────
+  function mostrarAlerta(msg, tipo) {
+    let al = document.getElementById('form-alerta');
+    if (!al) {
+      al = document.createElement('div');
+      al.id = 'form-alerta';
+      al.style.cssText = 'padding:12px 16px;border-radius:8px;font-size:13px;margin-top:10px;font-weight:600';
+      document.querySelector('.btn-submit').after(al);
+    }
+    al.textContent = msg;
+    al.style.background = tipo === 'ok' ? 'var(--mata-suave)' : 'var(--vermelho-suave)';
+    al.style.color = tipo === 'ok' ? 'var(--mata)' : 'var(--vermelho)';
+    al.style.display = 'block';
+    setTimeout(() => { al.style.display = 'none'; }, 4000);
+  }
+
+  // ── MODAL DETALHE RELATÓRIO ───────────────────────────────────
+  function abrirDetalhe(id) {
+    const r = relatoriosCache.find(x => x.id === id);
+    if (!r) return;
+    const MESES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const saldo = calcularSaldo(r.receitas, r.despesas);
+
+    document.getElementById('det-titulo').textContent = MESES[parseInt(r.mes)] + ' / ' + r.ano;
+    document.getElementById('det-receitas').textContent  = r.receitas  ? 'R$ ' + r.receitas  : 'Não informado';
+    document.getElementById('det-despesas').textContent  = r.despesas  ? 'R$ ' + r.despesas  : 'Não informado';
+    document.getElementById('det-saldo').textContent     = saldo !== null ? 'R$ ' + saldo : '—';
+    document.getElementById('det-atend').textContent     = r.atendimentos ? r.atendimentos + ' pessoas' : 'Não informado';
+    document.getElementById('det-descricao').textContent = r.descricao || 'Nenhuma descrição fornecida.';
+    document.getElementById('det-data').textContent      = r.atualizado_em ? 'Publicado em: ' + r.atualizado_em : '';
+
+    const btnBaixar = document.getElementById('det-baixar');
+    if (r.arquivo_url) {
+      btnBaixar.style.display = 'flex';
+      btnBaixar.href = r.arquivo_url;
+      btnBaixar.target = '_blank';
+    } else {
+      btnBaixar.style.display = 'none';
+    }
+    document.getElementById('modalDetalhe').classList.add('aberto');
+  }
+
+  function fecharDetalhe() {
+    document.getElementById('modalDetalhe').classList.remove('aberto');
+  }
+
+  function calcularSaldo(rec, desp) {
+    if (!rec && !desp) return null;
+    const r = parseFloat((rec || '0').replace(/\./g,'').replace(',','.')) || 0;
+    const d = parseFloat((desp || '0').replace(/\./g,'').replace(',','.')) || 0;
+    const s = r - d;
+    return s.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  }
+
+  document.getElementById('modalDetalhe').addEventListener('click', function(e) {
+    if (e.target === this) fecharDetalhe();
+  });
+
+  // ── CONEXÃO COM O SUPABASE ─────────────────────────────────────
+  const SUPABASE_URL = 'https://soxcywfipndchpcwhmmc.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNveGN5d2ZpcG5kY2hwY3dobW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODYwNjAsImV4cCI6MjA4MDg2MjA2MH0.LgMWpvaNtE2vvV6E-Jetx0lTT95YulURW5_TNoY7j6w';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const MESES_N = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  let relatoriosCache = [];
+
+  async function carregarRelatorios() {
+    // A política do banco já garante que só relatórios "publicado"
+    // são retornados para quem não está logado.
+    const { data, error } = await supabaseClient.from('relatorios').select('*');
+    if (error) { console.error(error); return []; }
+    relatoriosCache = data;
+    return data;
+  }
+
+  // ── RENDER PRESTAÇÕES NO SITE PÚBLICO ─────────────────────────
+  async function renderPrestacoes() {
+    const lista = (await carregarRelatorios()).filter(r => r.status === 'publicado');
+    const filtroAno = document.getElementById('filtro-ano').value;
+
+    const anos = [...new Set(lista.map(r => r.ano))].sort((a,b) => b-a);
+    const sel = document.getElementById('filtro-ano');
+    const valorAtual = sel.value;
+    sel.innerHTML = '<option value="">Todos os anos</option>' + anos.map(a => `<option value="${a}" ${a == valorAtual ? 'selected' : ''}>${a}</option>`).join('');
+
+    const filtrados = filtroAno ? lista.filter(r => r.ano == filtroAno) : lista;
+    const sorted = [...filtrados].sort((a,b) => (b.ano+b.mes).localeCompare(a.ano+a.mes));
+    const grid = document.getElementById('pc-grid-publico');
+
+    if (!sorted.length) {
+      grid.innerHTML = `
+        <div class="pc-card" style="opacity:0.6;grid-column:1/-1;">
+          <div class="pc-empty">
+            <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+            ${filtroAno ? 'Nenhum relatório publicado em ' + filtroAno + '.' : 'Os relatórios mensais aparecerão aqui quando publicados pela equipe.'}
+          </div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = sorted.map(r => {
+      const saldo = calcularSaldo(r.receitas, r.despesas);
+      const saldoPositivo = saldo !== null && !saldo.startsWith('-');
+      return `
+        <div class="pc-card">
+          <div class="pc-card-header">
+            <div>
+              <div class="pc-card-month">${MESES_N[parseInt(r.mes)]}</div>
+              <div class="pc-card-year">${r.ano}</div>
+            </div>
+            <span class="pc-card-status status-ok">Publicado</span>
+          </div>
+          <div class="pc-card-items">
+            <div class="pc-item"><span class="key">Receitas</span><span class="val">${r.receitas ? 'R$ ' + r.receitas : '—'}</span></div>
+            <div class="pc-item"><span class="key">Despesas</span><span class="val">${r.despesas ? 'R$ ' + r.despesas : '—'}</span></div>
+            ${saldo !== null ? `<div class="pc-item"><span class="key">Saldo</span><span class="val" style="color:${saldoPositivo ? 'var(--mata)' : 'var(--vermelho)'}">R$ ${saldo}</span></div>` : ''}
+            ${r.atendimentos ? `<div class="pc-item"><span class="key">Atendimentos</span><span class="val">${r.atendimentos} pessoas</span></div>` : ''}
+          </div>
+          <div class="pc-card-actions">
+            <button class="btn-sm btn-sm-primary" onclick="abrirDetalhe('${r.id}')">Ver detalhes</button>
+            ${r.arquivo_url ? `<a href="${r.arquivo_url}" target="_blank" class="btn-sm btn-sm-ghost">Baixar PDF</a>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  renderPrestacoes();
+
+  window.addEventListener('focus', renderPrestacoes);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) renderPrestacoes();
+  });
+</script>
+</body>
+</html>
